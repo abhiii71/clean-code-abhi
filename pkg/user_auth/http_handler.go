@@ -19,6 +19,10 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) MountRoutes(engine *gin.Engine) {
 	applicantApi := engine.Group(basePath)
 	applicantApi.POST("/register", h.Register)
+
+	protected := applicantApi.Group("/")
+	protected.Use(AuthMiddleware())
+	protected.GET("/profile", h.GetProfile)
 }
 
 func (h *Handler) respondWithError(c *gin.Context, code int, msg interface{}) {
@@ -58,4 +62,15 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 	h.respondWithData(c, http.StatusOK, "success", map[string]string{"token: ": token})
+}
+
+// Get the user Profile
+func (h *Handler) GetProfile(c *gin.Context) {
+	userID := c.GetString("userID")
+	email := c.GetString("email")
+
+	h.respondWithData(c, http.StatusOK, "profile fetched successfully", gin.H{
+		"user_id": userID,
+		"email":   email,
+	})
 }
