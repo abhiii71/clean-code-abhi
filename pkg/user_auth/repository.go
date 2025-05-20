@@ -6,7 +6,7 @@ import (
 )
 
 type Repository interface {
-	Register(ctx context.Context, request UserRegisterRequest) error
+	Register(ctx context.Context, request UserRegisterRequest) (string, error)
 }
 
 type repository struct {
@@ -19,9 +19,10 @@ func NewRepository(db *sql.DB) Repository {
 	}
 }
 
-func (r *repository) Register(ctx context.Context, request UserRegisterRequest) error {
-	query := `INSERT INTO users (first_name, last_name, email, password) VALUES($1, $2, $3, $4)`
+func (r *repository) Register(ctx context.Context, request UserRegisterRequest) (string, error) {
+	query := `INSERT INTO users (first_name, last_name, email, password) VALUES($1, $2, $3, $4) RETURNING id`
 
-	_, err := r.db.Exec(query, request.FirstName, request.LastName, request.Email, request.Password)
-	return err
+	var userID string
+	err := r.db.QueryRowContext(ctx, query, request.FirstName, request.LastName, request.Email, request.Password).Scan(&userID)
+	return userID, err
 }

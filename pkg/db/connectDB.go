@@ -11,7 +11,7 @@ import (
 
 func ConnectPGDB(cnf config.Config) *sql.DB {
 	fmt.Println(cnf)
-	postgresURL := fmt.Sprintf("%v://%v:%v@%v:%v/%v?sslmode=%v", cnf.PGDBmsName, cnf.PgPassword, cnf.PgPassword, cnf.PGHost, cnf.PgPort, cnf.PGDBName, cnf.PgSSLMode)
+	postgresURL := fmt.Sprintf("%v://%v:%v@%v:%v/%v?sslmode=%v", cnf.PGDBmsName, cnf.PgUserName, cnf.PgPassword, cnf.PGHost, cnf.PgPort, cnf.PGDBName, cnf.PgSSLMode)
 	db, err := sql.Open(cnf.PgDriverName, postgresURL)
 	if err != nil {
 		log.Fatal(err, err.Error(), "driver name", cnf.PgDriverName, "postgres URL", postgresURL)

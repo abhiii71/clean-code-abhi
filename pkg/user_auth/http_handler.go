@@ -41,7 +41,7 @@ func (h *Handler) respondWithData(c *gin.Context, code int, message interface{},
 func (h *Handler) Register(c *gin.Context) {
 	var request UserRegisterRequest
 
-	if err := c.ShouldBindJSON(request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
 		return
 	}
@@ -52,11 +52,10 @@ func (h *Handler) Register(c *gin.Context) {
 		h.respondWithError(c, http.StatusBadRequest, map[string]interface{}{"invalid-request": errVal})
 		return
 	}
-	err := h.service.Register(c, request)
-
+	token, err := h.service.Register(c, request)
 	if err != nil {
 		h.respondWithError(c, http.StatusBadRequest, map[string]string{"err": err.Error()})
 		return
 	}
-	h.respondWithData(c, http.StatusOK, "success", nil)
+	h.respondWithData(c, http.StatusOK, "success", map[string]string{"token: ": token})
 }
