@@ -11,6 +11,7 @@ import (
 type Service interface {
 	Register(ctx context.Context, request UserRegisterRequest) (string, error)
 	Login(ctx context.Context, request UserLoginRequest) (string, error)
+	GetProfile(ctx context.Context, userId string) (User, error)
 }
 
 type service struct {
@@ -65,4 +66,10 @@ func (s *service) Login(ctx context.Context, req UserLoginRequest) (string, erro
 		return "", err
 	}
 	return token, nil
+}
+
+// get profile
+func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
+	log.Println("[Service] GetProfile called with userID: ", userID)
+	return s.repo.FindByUserID(ctx, userID)
 }

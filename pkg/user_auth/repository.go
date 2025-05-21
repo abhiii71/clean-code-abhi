@@ -11,6 +11,7 @@ type Repository interface {
 	Register(ctx context.Context, request UserRegisterRequest) (string, error)
 	Login(ctx context.Context, email string) (User, error)
 	FindByEmail(ctx context.Context, email string) (User, error)
+	FindByUserID(ctx context.Context, userID string) (User, error)
 }
 
 type repository struct {
@@ -58,6 +59,28 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (User, error
 	if err != nil {
 		return User{}, err
 	}
+	return user, nil
+}
+
+func (r *repository) FindByUserID(ctx context.Context, userId string) (User, error) {
+	var user User
+
+	query := "SELECT id, first_name, last_name, email, password, dob, gender FROM users WHERE id=$1"
+
+	row := r.db.QueryRowContext(ctx, query, userId)
+
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.DOB, &user.Gender)
+	if err != nil {
+		log.Println("[FindByUserID] DB scan error:", err)
+		return User{}, err
+	}
+	// calculate age
+	now := time.Now()
+	years := now.Year() - user.DOB.Year()
+	if now.YearDay() < user.DOB.YearDay() {
+		years--
+	}
+	user.Age = years
 	return user, nil
 }
 

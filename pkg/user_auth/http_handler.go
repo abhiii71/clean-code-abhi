@@ -67,12 +67,33 @@ func (h *Handler) Register(c *gin.Context) {
 
 // Get the user Profile
 func (h *Handler) GetProfile(c *gin.Context) {
-	userID := c.GetInt("userID")
-	email := c.GetString("email")
+	userID := c.GetString("user_id")
+
+	user, err := h.service.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		log.Println("[GetProfile] Error fetching user: ", err)
+		h.respondWithError(c, http.StatusInternalServerError, "failed to fetched profile")
+		return
+	}
+
+	log.Printf("[GetProfile] User fetched: %+v\n", user)
+	// email := c.GetString("email")
+	// dob := c.GetString("age")
+	// firstName := c.GetString("first_name")
+	// lastName := c.GetString("last_name")
+	// gender := c.GetString("gender")
+	// age := c.GetString("age")
+	// //debug
+	log.Printf("[GetProfile] User fetched: %+v\n", user)
 
 	h.respondWithData(c, http.StatusOK, "profile fetched successfully", gin.H{
-		"user_id": userID,
-		"email":   email,
+		"user_id":    user.ID,
+		"email":      user.Email,
+		"dob":        user.DOB.Format("2006-01-02"),
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
+		"gender":     user.Gender,
+		"age":        user.Age,
 	})
 }
 
