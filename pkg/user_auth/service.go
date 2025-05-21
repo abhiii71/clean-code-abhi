@@ -2,12 +2,15 @@ package userauth
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service interface {
 	Register(ctx context.Context, request UserRegisterRequest) (string, error)
+	Login(ctx context.Context, request UserLoginRequest) (string, error)
 }
 
 type service struct {
@@ -25,6 +28,7 @@ func (s *service) Register(ctx context.Context, request UserRegisterRequest) (st
 	// password hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Println("[hashed password Error]:", err)
 		return "", err
 	}
 
@@ -36,10 +40,29 @@ func (s *service) Register(ctx context.Context, request UserRegisterRequest) (st
 		return "", err
 	}
 
-	token, err := GenerateToken(userID, request.Email)
+	// user exists
+	return userID, nil
+}
+
+func (s *service) Login(ctx context.Context, req UserLoginRequest) (string, error) {
+	log.Println("[Login Service] started")
+
+	user, err := s.repo.FindByEmail(ctx, req.Email)
 	if err != nil {
+		log.Println("[FindByEmail Error]:", err)
+		return "", fmt.Errorf("user not found")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err != nil {
+		log.Println("[Password Mismatch]", err)
+		return "", fmt.Errorf("invalid credentials")
+	}
+
+	token, err := GenerateToken(fmt.Sprintf("%d", user.ID), user.Email)
+	if err != nil {
+		log.Println("[Token Generation Error]:", err)
 		return "", err
 	}
-	// user exists
 	return token, nil
 }

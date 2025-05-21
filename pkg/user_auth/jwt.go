@@ -13,6 +13,7 @@ var jwtSecretKey = []byte("super_secret_key")
 type JWTClaims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
+	Age    int    `json:"age"`
 	jwt.RegisteredClaims
 }
 
