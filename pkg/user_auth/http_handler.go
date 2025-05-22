@@ -57,7 +57,7 @@ func (h *Handler) Register(c *gin.Context) {
 		h.respondWithError(c, http.StatusBadRequest, map[string]interface{}{"invalid-request": errVal})
 		return
 	}
-	userID, err := h.service.Register(c, request)
+	userID, err := h.service.UserRegister(c, request)
 	if err != nil {
 		h.respondWithError(c, http.StatusBadRequest, map[string]string{"err": err.Error()})
 		return
@@ -75,16 +75,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 		h.respondWithError(c, http.StatusInternalServerError, "failed to fetched profile")
 		return
 	}
-
-	log.Printf("[GetProfile] User fetched: %+v\n", user)
-	// email := c.GetString("email")
-	// dob := c.GetString("age")
-	// firstName := c.GetString("first_name")
-	// lastName := c.GetString("last_name")
-	// gender := c.GetString("gender")
-	// age := c.GetString("age")
-	// //debug
-	log.Printf("[GetProfile] User fetched: %+v\n", user)
+	// log.Printf("[GetProfile] User fetched: %+v\n", user)
 
 	h.respondWithData(c, http.StatusOK, "profile fetched successfully", gin.H{
 		"user_id":    user.ID,
@@ -108,19 +99,13 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	log.Println("[Login Handler] Request Body Parsed:", request)
+	// log.Println("[Login Handler] Request Body Parsed:", request)
 
-	token, err := h.service.Login(c.Request.Context(), request)
+	token, err := h.service.GetUserProfile(c.Request.Context(), request)
 	if err != nil {
 		log.Println("[Token error] ", token)
 		h.respondWithError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 	h.respondWithData(c, http.StatusOK, "login success", gin.H{"token": token})
-
-	// // validate email
-	// if !emailregex.MatchString(req.Email)
-	// if err != nil {
-	// 	c.JSON(400, gin.H.StatusBadRequest)
-	// }
 }

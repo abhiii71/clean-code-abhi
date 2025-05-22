@@ -36,7 +36,7 @@ type UserLoginRequest struct {
 }
 
 // emailregex
-var emailregex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+var emailregex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z.-]+\.[a-zA-Z]{2,}$`)
 
 // function to handle the dob time
 func (d *Date) UnmarshalJSON(b []byte) error {

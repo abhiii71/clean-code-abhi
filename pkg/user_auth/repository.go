@@ -8,8 +8,8 @@ import (
 )
 
 type Repository interface {
-	Register(ctx context.Context, request UserRegisterRequest) (string, error)
-	Login(ctx context.Context, email string) (User, error)
+	UserRegister(ctx context.Context, request UserRegisterRequest) (string, error)
+	GetUserProfile(ctx context.Context, email string) (User, error)
 	FindByEmail(ctx context.Context, email string) (User, error)
 	FindByUserID(ctx context.Context, userID string) (User, error)
 }
@@ -24,7 +24,7 @@ func NewRepository(db *sql.DB) Repository {
 	}
 }
 
-func (r *repository) Register(ctx context.Context, request UserRegisterRequest) (string, error) {
+func (r *repository) UserRegister(ctx context.Context, request UserRegisterRequest) (string, error) {
 	query := `INSERT INTO users 
     (first_name, last_name, email, password, dob, gender)
     VALUES ($1, $2, $3, $4, $5, $6)
@@ -74,23 +74,16 @@ func (r *repository) FindByUserID(ctx context.Context, userId string) (User, err
 		log.Println("[FindByUserID] DB scan error:", err)
 		return User{}, err
 	}
-	// calculate age
-	now := time.Now()
-	years := now.Year() - user.DOB.Year()
-	if now.YearDay() < user.DOB.YearDay() {
-		years--
-	}
-	user.Age = years
 	return user, nil
 }
 
-func (r *repository) Login(ctx context.Context, email string) (User, error) {
+func (r *repository) GetUserProfile(ctx context.Context, email string) (User, error) {
 	var user User
 	query := "SELECT id, email, password FROM users WHERE email=$1"
 	row := r.db.QueryRowContext(ctx, query, email)
 
 	err := row.Scan(&user.ID, &user.Email, &user.Password)
-	log.Println("[DB password retrieved]:", user.Password)
+	// log.Println("[DB password retrieved]:", user.Password)
 	if err != nil {
 		return User{}, err
 	}

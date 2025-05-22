@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service interface {
-	Register(ctx context.Context, request UserRegisterRequest) (string, error)
-	Login(ctx context.Context, request UserLoginRequest) (string, error)
+	UserRegister(ctx context.Context, request UserRegisterRequest) (string, error)
+	GetUserProfile(ctx context.Context, request UserLoginRequest) (string, error)
 	GetProfile(ctx context.Context, userId string) (User, error)
 }
 
@@ -24,7 +25,7 @@ func NewService(repo Repository) Service {
 	}
 }
 
-func (s *service) Register(ctx context.Context, request UserRegisterRequest) (string, error) {
+func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest) (string, error) {
 	// business login
 	// password hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
@@ -33,10 +34,15 @@ func (s *service) Register(ctx context.Context, request UserRegisterRequest) (st
 		return "", err
 	}
 
+	_, err = s.repo.FindByEmail(ctx, request.Email)
+	if err == nil {
+		log.Println("[FindByEmail Error]:", err)
+		return "", fmt.Errorf("email already regestered")
+	}
 	request.Password = string(hashedPassword)
 
 	// store the user
-	userID, err := s.repo.Register(ctx, request)
+	userID, err := s.repo.UserRegister(ctx, request)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +51,7 @@ func (s *service) Register(ctx context.Context, request UserRegisterRequest) (st
 	return userID, nil
 }
 
-func (s *service) Login(ctx context.Context, req UserLoginRequest) (string, error) {
+func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (string, error) {
 	log.Println("[Login Service] started")
 
 	user, err := s.repo.FindByEmail(ctx, req.Email)
@@ -65,6 +71,13 @@ func (s *service) Login(ctx context.Context, req UserLoginRequest) (string, erro
 		log.Println("[Token Generation Error]:", err)
 		return "", err
 	}
+	// calculate age
+	now := time.Now()
+	years := now.Year() - user.DOB.Year()
+	if now.YearDay() < user.DOB.YearDay() {
+		years--
+	}
+	user.Age = years
 	return token, nil
 }
 
