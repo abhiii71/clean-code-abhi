@@ -2,9 +2,9 @@ package userauth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -13,6 +13,8 @@ type Service interface {
 	UserRegister(ctx context.Context, request UserRegisterRequest) (string, error)
 	GetUserProfile(ctx context.Context, request UserLoginRequest) (string, error)
 	GetProfile(ctx context.Context, userId string) (User, error)
+	UserInformation(ctx context.Context, request UserInformationRequest) error
+	UpdateUserInformation(ctx context.Context, req UserInformationRequest) error
 }
 
 type service struct {
@@ -36,7 +38,7 @@ func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest)
 
 	_, err = s.repo.FindByEmail(ctx, request.Email)
 	if err == nil {
-		log.Println("[FindByEmail Error]:", err)
+		// log.Println("[FindByEmail Error]:", err)
 		return "", fmt.Errorf("email already regestered")
 	}
 	request.Password = string(hashedPassword)
@@ -51,6 +53,34 @@ func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest)
 	return userID, nil
 }
 
+//	func (s *service) UserInformation(ctx context.Context, request UserInformationRequest) error {
+//		// validate the request
+//		if request.ID == 0 {
+//			return fmt.Errorf("invalid user id")
+//		}
+//		err := s.repo.InsertUserInformation(ctx, request)
+//		if err != nil {
+//			log.Println("[UserInformation] Insert failed:", err)
+//			return err
+//		}
+//		return nil
+//	}
+var ErrNoRowsAffected = errors.New("no rows affected")
+
+func (s *service) UserInformation(ctx context.Context, req UserInformationRequest) error {
+	// Try to update first
+	err := s.repo.UpdateUserInformation(ctx, req)
+	if err == ErrNoRowsAffected { // or custom error if update didn't find row
+		// Insert since update didn't affect any row
+		err = s.repo.InsertUserInformation(ctx, req)
+	}
+	return err
+}
+
+// User information update
+func (s *service) UpdateUserInformation(ctx context.Context, req UserInformationRequest) error {
+	return s.repo.UpdateUserInformation(ctx, req)
+}
 func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (string, error) {
 	log.Println("[Login Service] started")
 
@@ -71,13 +101,6 @@ func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (str
 		log.Println("[Token Generation Error]:", err)
 		return "", err
 	}
-	// calculate age
-	now := time.Now()
-	years := now.Year() - user.DOB.Year()
-	if now.YearDay() < user.DOB.YearDay() {
-		years--
-	}
-	user.Age = years
 	return token, nil
 }
 

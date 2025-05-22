@@ -1,6 +1,7 @@
 package userauth
 
 import (
+	"encoding/json"
 	"net/url"
 	"regexp"
 	"strings"
@@ -18,6 +19,30 @@ type UserRegisterRequest struct {
 	Password  string `json:"password"`
 	DOB       Date   `json:"dob"`
 	Gender    string `json:"gender"`
+}
+
+// for user_information
+type UserInformationRequest struct {
+	UUID      string `json:"uuid"`
+	ID        int    `json:"id"`
+	Address   Address
+	Vehicle   Vehicle
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// for address field inside userinformation
+type Address struct {
+	City       json.RawMessage `json:"city"`
+	State      json.RawMessage `json:"state"`
+	PostalCode json.RawMessage `json:"postal_code"`
+	Country    json.RawMessage `json:"country"`
+}
+
+// for address field inside userinformation
+type Vehicle struct {
+	Car  bool `json:"car"`
+	Bike bool `json:"bike"`
 }
 
 // enum types
