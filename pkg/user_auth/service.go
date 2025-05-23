@@ -2,6 +2,7 @@ package userauth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -69,17 +70,13 @@ var ErrNoRowsAffected = errors.New("no rows affected")
 
 func (s *service) UserInformation(ctx context.Context, req UserInformationRequest) error {
 	// Try to update first
-	err := s.repo.UpdateUserInformation(ctx, req)
-	if err == ErrNoRowsAffected { // or custom error if update didn't find row
-		// Insert since update didn't affect any row
-		err = s.repo.InsertUserInformation(ctx, req)
-	}
+	err := s.repo.UpsertUserInformation(ctx, req)
 	return err
 }
 
 // User information update
 func (s *service) UpdateUserInformation(ctx context.Context, req UserInformationRequest) error {
-	return s.repo.UpdateUserInformation(ctx, req)
+	return s.repo.UpsertUserInformation(ctx, req)
 }
 func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (string, error) {
 	log.Println("[Login Service] started")
@@ -107,5 +104,36 @@ func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (str
 // get profile
 func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
 	log.Println("[Service] GetProfile called with userID: ", userID)
-	return s.repo.FindByUserID(ctx, userID)
+	log.Println("[Service] GetProfile called with userID: ", userID)
+
+	user, addressJSON, vehicleJSON, err := s.repo.FindByUserID(ctx, userID)
+	if err != nil {
+		log.Println("[GetProfile] Error fetching user:", err)
+		return User{}, err
+	}
+
+	if addressJSON != nil {
+		err := json.Unmarshal(*addressJSON, &user.Address)
+		if err != nil {
+			log.Println("[GetProfile] Error unmarshaling address:", err)
+			return User{}, err
+		}
+	} else {
+		log.Println("[GetProfile] Address is NULL, using zero value")
+	}
+
+	if vehicleJSON != nil {
+		err := json.Unmarshal(*vehicleJSON, &user.Vehicle)
+		if err != nil {
+			log.Println("[GetProfile] Error unmarshaling vehicle:", err)
+			return User{}, err
+		}
+	} else {
+		log.Println("[GetProfile] Vehicle is NULL, using zero value")
+	}
+
+	return user, nil
 }
+
+// 	return s.repo.FindByUserID(ctx, userID)
+// }

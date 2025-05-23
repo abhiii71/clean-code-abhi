@@ -1,7 +1,6 @@
 package userauth
 
 import (
-	"encoding/json"
 	"net/url"
 	"regexp"
 	"strings"
@@ -23,20 +22,20 @@ type UserRegisterRequest struct {
 
 // for user_information
 type UserInformationRequest struct {
-	UUID      string `json:"uuid"`
-	ID        int    `json:"id"`
-	Address   Address
-	Vehicle   Vehicle
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	UUID      string  `json:"user_uuid"`
+	ID        int     `json:"id"`
+	Address   Address `json:"address"`
+	Vehicle   Vehicle `json:"vehicle"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
 }
 
 // for address field inside userinformation
 type Address struct {
-	City       json.RawMessage `json:"city"`
-	State      json.RawMessage `json:"state"`
-	PostalCode json.RawMessage `json:"postal_code"`
-	Country    json.RawMessage `json:"country"`
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
 }
 
 // for address field inside userinformation

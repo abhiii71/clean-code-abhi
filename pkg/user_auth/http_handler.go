@@ -3,6 +3,7 @@ package userauth
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,10 +23,10 @@ func (h *Handler) MountRoutes(engine *gin.Engine) {
 	applicantApi := engine.Group(basePath)
 	applicantApi.POST("/register", h.Register)
 	applicantApi.POST("/login", h.Login)
-	applicantApi.POST("/info", h.InsertUserInformation)
 
 	applicantApi.Use(AuthMiddleware())
 	applicantApi.GET("/profile", h.GetProfile)
+	applicantApi.PATCH("/profile", h.UpdateUserInformation)
 
 }
 
@@ -74,27 +75,42 @@ func (h *Handler) respondWithSuccess(c *gin.Context, status int, msg string) {
 		"msg": msg,
 	})
 }
-
-func (h *Handler) InsertUserInformation(c *gin.Context) {
+func (h *Handler) UpdateUserInformation(c *gin.Context) {
 	var req UserInformationRequest
 
+	// Bind JSON after resetting body
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("[InsertUserInformation] Bind Error:", err)
+		log.Println("[UpdateUserInformation] Invalid JSON:", err)
 		h.respondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if req.ID == 0 {
-		h.respondWithError(c, http.StatusBadRequest, "missing required fields")
+	// Get user ID from JWT context (set by middleware)
+	userID := c.GetString("user_id")
+	if userID == "" {
+		h.respondWithError(c, http.StatusUnauthorized, "user ID missing from token")
 		return
 	}
 
-	err := h.service.UpdateUserInformation(c.Request.Context(), req)
+	// Convert userID string to int (or whatever type UserInformationRequest.ID expects)
+	idInt, err := strconv.Atoi(userID)
+	if err != nil {
+		log.Println("[InsertUserInformation] Invalid user_id in context:", err)
+		h.respondWithError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	req.ID = idInt
+
+	// Call service
+	err = h.service.UpdateUserInformation(c.Request.Context(), req)
 	if err != nil {
 		log.Println("[InsertUserInformation] Service Error:", err)
 		h.respondWithError(c, http.StatusInternalServerError, "could not upsert user info")
 		return
 	}
+
+	log.Println("user_id from token:", req.ID)
+	log.Printf("request body: %+v\n", req)
 
 	h.respondWithSuccess(c, http.StatusOK, "user info upserted successfully")
 }
@@ -154,6 +170,8 @@ func (h *Handler) GetProfile(c *gin.Context) {
 		"last_name":  user.LastName,
 		"gender":     user.Gender,
 		"age":        age,
+		"address":    user.Address,
+		"vehicle":    user.Vehicle,
 	})
 }
 

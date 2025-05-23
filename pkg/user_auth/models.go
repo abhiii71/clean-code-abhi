@@ -1,6 +1,8 @@
 package userauth
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	ID        int       `json:"id"`
@@ -11,4 +13,6 @@ type User struct {
 	Age       int       `json:"age"`
 	DOB       time.Time `json:"dob"`
 	Gender    string    `json:"gender"`
+	Address   *[]uint8  `json:"address"`
+	Vehicle   *[]uint8  `json:"vehicle"`
 }
