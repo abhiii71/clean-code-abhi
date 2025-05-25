@@ -104,7 +104,6 @@ func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (str
 // get profile
 func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
 	log.Println("[Service] GetProfile called with userID: ", userID)
-	log.Println("[Service] GetProfile called with userID: ", userID)
 
 	user, addressJSON, vehicleJSON, err := s.repo.FindByUserID(ctx, userID)
 	if err != nil {
@@ -113,7 +112,7 @@ func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
 	}
 
 	if addressJSON != nil {
-		err := json.Unmarshal(*addressJSON, &user.Address)
+		err := json.Unmarshal(addressJSON, &user.Address)
 		if err != nil {
 			log.Println("[GetProfile] Error unmarshaling address:", err)
 			return User{}, err
@@ -123,7 +122,7 @@ func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
 	}
 
 	if vehicleJSON != nil {
-		err := json.Unmarshal(*vehicleJSON, &user.Vehicle)
+		err := json.Unmarshal(vehicleJSON, &user.Vehicle)
 		if err != nil {
 			log.Println("[GetProfile] Error unmarshaling vehicle:", err)
 			return User{}, err

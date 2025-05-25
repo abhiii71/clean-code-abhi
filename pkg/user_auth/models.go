@@ -13,6 +13,6 @@ type User struct {
 	Age       int       `json:"age"`
 	DOB       time.Time `json:"dob"`
 	Gender    string    `json:"gender"`
-	Address   *[]uint8  `json:"address"`
-	Vehicle   *[]uint8  `json:"vehicle"`
+	Address   Address   `json:"address"`
+	Vehicle   Vehicle   `json:"vehicle"`
 }

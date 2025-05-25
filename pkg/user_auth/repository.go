@@ -12,12 +12,12 @@ type Repository interface {
 	UserRegister(ctx context.Context, request UserRegisterRequest) (string, error)
 	GetUserProfile(ctx context.Context, email string) (User, error)
 	FindByEmail(ctx context.Context, email string) (User, error)
-	FindByUserID(ctx context.Context, userID string) (User, *json.RawMessage, *json.RawMessage, error)
+	FindByUserID(ctx context.Context, userID string) (User, []byte, []byte, error)
 	// (User, error)
 	// InsertUserInformation(ctx context.Context, request UserInformationRequest) error
 	UpsertUserInformation(ctx context.Context, userInfo UserInformationRequest) error
 
-	FindByUUID(ctx context.Context, request UserInformationRequest) (UserInformationRequest, error)
+	// FindByUUID(ctx context.Context, request UserInformationRequest) (UserInformationRequest, error)
 }
 
 type repository struct {
@@ -132,23 +132,23 @@ func (r *repository) UpsertUserInformation(ctx context.Context, req UserInformat
 // 	return err
 // }
 
-func (r *repository) FindByUUID(ctx context.Context, request UserInformationRequest) (UserInformationRequest, error) {
-	var user UserInformationRequest
+// func (r *repository) FindByUUID(ctx context.Context, request UserInformationRequest) (UserInformationRequest, error) {
+// 	var user UserInformationRequest
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	query := `SELECT uuid, id, address, vehicle FROM user_information WHERE uuid = $1`
-	err := r.db.QueryRowContext(ctx, query, request.UUID).Scan(
-		&user.UUID,
-		&user.ID,
-		&user.Address,
-		&user.Vehicle,
-	)
-	if err != nil {
-		return UserInformationRequest{}, err
-	}
-	return user, nil
-}
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+// 	query := `SELECT uuid, id, address, vehicle FROM user_information WHERE uuid = $1`
+// 	err := r.db.QueryRowContext(ctx, query, request.UUID).Scan(
+// 		&user.UUID,
+// 		&user.ID,
+// 		&user.Address,
+// 		&user.Vehicle,
+// 	)
+// 	if err != nil {
+// 		return UserInformationRequest{}, err
+// 	}
+// 	return user, nil
+// }
 
 func (r *repository) FindByEmail(ctx context.Context, email string) (User, error) {
 	var user User
@@ -164,11 +164,15 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (User, error
 	return user, nil
 }
 
-func (r *repository) FindByUserID(ctx context.Context, userID string) (User, *json.RawMessage, *json.RawMessage, error) {
+func (r *repository) FindByUserID(ctx context.Context, userID string) (User, []byte, []byte, error) {
 	var user User
 
-	var addressJSON *json.RawMessage
-	var vehicleJSON *json.RawMessage
+	var (
+		addressBytes []byte
+		vehicleBytes []byte
+	)
+	// var addressJSON *json.RawMessage
+	// var vehicleJSON *json.RawMessage
 
 	query := `
     SELECT 
@@ -188,15 +192,15 @@ func (r *repository) FindByUserID(ctx context.Context, userID string) (User, *js
 		&user.FirstName,
 		&user.LastName,
 		&user.Gender,
-		&addressJSON, //uint8
-		&vehicleJSON, //uint8
+		&addressBytes, //uint8
+		&vehicleBytes, //uint8
 	)
 	if err != nil {
 		log.Println("[GetProfile] Error scanning user:", err)
 		return user, nil, nil, err
 	}
 
-	return user, addressJSON, vehicleJSON, nil
+	return user, addressBytes, vehicleBytes, nil
 }
 
 func (r *repository) GetUserProfile(ctx context.Context, email string) (User, error) {
