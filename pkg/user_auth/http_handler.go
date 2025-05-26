@@ -102,7 +102,7 @@ func (h *Handler) UpdateUserInformation(c *gin.Context) {
 	req.ID = idInt
 
 	// Call service
-	err = h.service.UpdateUserInformation(c.Request.Context(), req)
+	err = h.service.UpdateUserInfo(c.Request.Context(), req)
 	if err != nil {
 		log.Println("[InsertUserInformation] Service Error:", err)
 		h.respondWithError(c, http.StatusInternalServerError, "could not upsert user info")

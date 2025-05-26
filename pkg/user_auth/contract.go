@@ -22,7 +22,6 @@ type UserRegisterRequest struct {
 
 // for user_information
 type UserInformationRequest struct {
-	UUID      string  `json:"user_uuid"`
 	ID        int     `json:"id"`
 	Address   Address `json:"address"`
 	Vehicle   Vehicle `json:"vehicle"`
@@ -32,16 +31,16 @@ type UserInformationRequest struct {
 
 // for address field inside userinformation
 type Address struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City       *string `json:"city"`
+	State      *string `json:"state"`
+	PostalCode *string `json:"postal_code"`
+	Country    *string `json:"country"`
 }
 
 // for address field inside userinformation
 type Vehicle struct {
-	Car  bool `json:"car"`
-	Bike bool `json:"bike"`
+	Car  *bool `json:"car"`
+	Bike *bool `json:"bike"`
 }
 
 // enum types
