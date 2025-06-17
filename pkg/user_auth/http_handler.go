@@ -3,6 +3,7 @@ package userauth
 import (
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -23,7 +24,7 @@ func (h *Handler) MountRoutes(engine *gin.Engine) {
 	applicantApi := engine.Group(basePath)
 	applicantApi.POST("/register", h.Register)
 	applicantApi.POST("/login", h.Login)
-
+	applicantApi.POST("/file", h.UploadPDF)
 	applicantApi.Use(AuthMiddleware())
 	applicantApi.GET("/profile", h.GetProfile)
 	applicantApi.PATCH("/profile", h.UpdateUserInformation)
@@ -177,22 +178,41 @@ func (h *Handler) GetProfile(c *gin.Context) {
 
 // login handler
 func (h *Handler) Login(c *gin.Context) {
-	log.Println("[Login Handler] called")
 	var request UserLoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Println("[Login Handler] JSON Bind Error:", err)
 		h.respondWithError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 
-	// log.Println("[Login Handler] Request Body Parsed:", request)
-
 	token, err := h.service.GetUserProfile(c.Request.Context(), request)
 	if err != nil {
-		log.Println("[Token error] ", token)
 		h.respondWithError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 	h.respondWithData(c, http.StatusOK, "login success", gin.H{"token": token})
+}
+
+func (h *Handler) UploadPDF(c *gin.Context) {
+	email := c.PostForm("email")
+	file, err := c.FormFile("pdf")
+
+	if email == "" || err != nil {
+		log.Printf("Email: %s, FormFile error: %v\n", email, err)
+		h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": "email and pdf are required"})
+		return
+	}
+
+	if filepath.Ext(file.Filename) != ".pdf" {
+		h.respondWithError(c, http.StatusBadRequest, map[string]string{"invalid-file": "only PDF files are allowed"})
+		return
+	}
+
+	err = h.service.SaveUserPDF(c, email, file)
+	if err != nil {
+		h.respondWithError(c, http.StatusInternalServerError, map[string]string{"upload-failed": err.Error()})
+		return
+	}
+
+	h.respondWithData(c, http.StatusOK, "upload successful", map[string]string{"email": email})
 }

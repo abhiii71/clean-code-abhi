@@ -2,11 +2,14 @@ package userauth
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -18,10 +21,12 @@ type Service interface {
 	GetProfile(ctx context.Context, userId string) (User, error)
 	// GetUserInfo(ctx context.Context, request UserInformationRequest) error
 	UpdateUserInfo(ctx context.Context, req UserInformationRequest) error
+	SaveUserPDF(ctx context.Context, email string, file *multipart.FileHeader) error
 }
 
 type service struct {
-	repo Repository
+	repo      Repository
+	uploadDir string
 }
 
 func NewService(repo Repository) Service {
@@ -43,8 +48,6 @@ func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest)
 	if err == nil {
 		// log.Println("[FindByEmail Error]:", err)
 		return "", fmt.Errorf("email already regestered")
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return "", fmt.Errorf("error checking existing email: %w", err)
 	}
 	request.Password = string(hashedPassword)
 
@@ -60,25 +63,25 @@ func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest)
 
 var ErrNoRowsAffected = errors.New("no rows affected")
 
-func (s *service) UpdateUserInfo(ctx context.Context, request UserInformationRequest) error {
-	// Try to update first
-	err := s.repo.UpdateUserInfo(ctx, request)
-	return err
-}
+// func (s *service) UpdateUserInfo(ctx context.Context, request UserInformationRequest) error {
+// 	// Try to update first
+// 	err := s.repo.UpdateUserInfo(ctx, request)
+// 	return err
+// }
 
-// User information update
+// // User information update
 
-// Helper functions to check empty structs
-func isEmptyAddress(addr Address) bool {
-	return addr.City == nil && addr.State == nil && addr.PostalCode == nil && addr.Country == nil
-}
+// // Helper functions to check empty structs
+// func isEmptyAddress(addr Address) bool {
+// 	return addr.City == nil && addr.State == nil && addr.PostalCode == nil && addr.Country == nil
+// }
 
-func isEmptyVehicle(v Vehicle) bool {
-	// Customize depending on what empty means
-	return (v.Car == nil && v.Bike == nil)
-}
+// func isEmptyVehicle(v Vehicle) bool {
+// 	// Customize depending on what empty means
+// 	return (v.Car == nil && v.Bike == nil)
+// }
 
-func (s *service) UpdateUserInformation(ctx context.Context, req UserInformationRequest) error {
+func (s *service) UpdateUserInfo(ctx context.Context, req UserInformationRequest) error {
 	// Fetch existing data
 	existingUser, addressBytes, vehicleBytes, err := s.repo.FindUserByID(ctx, fmt.Sprintf("%d", req.ID))
 	if err != nil {
@@ -97,7 +100,7 @@ func (s *service) UpdateUserInformation(ctx context.Context, req UserInformation
 		}
 	}
 
-	// Merge Address fields
+	// Merge Address and Vehicle fields
 	if req.Address.City == nil {
 		req.Address.City = existingUser.Address.City
 	}
@@ -110,40 +113,28 @@ func (s *service) UpdateUserInformation(ctx context.Context, req UserInformation
 	if req.Address.Country == nil {
 		req.Address.Country = existingUser.Address.Country
 	}
-
-	// // Merge Vehicle fields
-	// if req.Vehicle.Car == nil {
-	// 	req.Vehicle.Car = existingUser.Vehicle.Car
-	// }
-	// if req.Vehicle.Bike == nil {
-	// 	req.Vehicle.Bike = existingUser.Vehicle.Bike
-	// }
-	// Merge Vehicle fields
 	if req.Vehicle.Car != nil {
 		existingUser.Vehicle.Car = req.Vehicle.Car
 	}
 	if req.Vehicle.Bike != nil {
 		existingUser.Vehicle.Bike = req.Vehicle.Bike
 	}
+
 	// Final request = fully merged
 	req.Address = existingUser.Address
 	req.Vehicle = existingUser.Vehicle
 
-	// Optional: Marshal here for logging/verification/debug (not mandatory)
 	addressJSON, err := json.Marshal(req.Address)
 	if err != nil {
 		return fmt.Errorf("failed to marshal address: %w", err)
 	}
-	log.Printf("[Service] Merged Address JSON: %s\n", string(addressJSON))
 
 	vehicleJSON, err := json.Marshal(req.Vehicle)
 	if err != nil {
 		return fmt.Errorf("failed to marshal vehicle: %w", err)
 	}
-	log.Printf("[Service] Merged Vehicle JSON: %s\n", string(vehicleJSON))
 
-	// Pass updated request to repo (repo will marshal again as per your current design)
-	return s.repo.UpdateUserInfo(ctx, req)
+	return s.repo.UpdateUserInfo(ctx, req, addressJSON, vehicleJSON)
 }
 
 func (s *service) GetUserProfile(ctx context.Context, req UserLoginRequest) (string, error) {
@@ -202,5 +193,31 @@ func (s *service) GetProfile(ctx context.Context, userID string) (User, error) {
 	return *user, nil
 }
 
-// 	return s.repo.FindByUserID(ctx, userID)
-// }
+func sanitizeEmail(email string) string {
+	email = strings.ReplaceAll(email, "@", "_at_")
+	email = strings.ReplaceAll(email, ".", "_dot_")
+	return email
+}
+
+func (s *service) saveFile(file *multipart.FileHeader, email string) error {
+	safeEmail := sanitizeEmail(email)
+	filePath := filepath.Join(s.uploadDir, safeEmail+".pdf")
+
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	_, err = io.Copy(dst, src)
+	return err
+}
+func (s *service) SaveUserPDF(ctx context.Context, email string, file *multipart.FileHeader) error {
+	return s.saveFile(file, email)
+}
