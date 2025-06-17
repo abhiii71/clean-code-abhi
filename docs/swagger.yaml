@@ -110,10 +110,35 @@ paths:
       tags:
       - Auth
   /applicant/external/v1/profile:
-    post:
+    get:
+      description: Get the user profile info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user Profile
+      tags:
+      - Profile
+    patch:
       consumes:
       - application/json
-      description: Updates the information of a registered user
+      description: Updates the user profile info
       parameters:
       - description: User Information Request
         in: body
@@ -127,8 +152,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
@@ -138,20 +162,13 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
       summary: Update user profile
       tags:
-      - Auth
+      - Profile
   /applicant/external/v1/register:
     post:
       consumes:
@@ -218,7 +235,14 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Upload a PDF file for a user
       tags:
       - Applicant
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

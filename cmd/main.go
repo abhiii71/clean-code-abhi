@@ -11,12 +11,13 @@ import (
 // @title	Clean-Code-Arch
 // @version 1.0
 // @description	This is clean code architecture.
-
 // @contact.name	Abhishek
 // @contact.url		https://linktr.ee/abhiii71
 // @contact.email	abhishek.work71@gmail.com
-
 // @host	localhost:8080
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	//loadConfig
 	cnf, err := config.LoadConfig()

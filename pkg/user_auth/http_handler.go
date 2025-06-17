@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,10 +24,10 @@ func (h *Handler) MountRoutes(engine *gin.Engine) {
 
 	applicantApi.POST("/register", h.Register)
 	applicantApi.POST("/login", h.Login)
-	applicantApi.POST("/upload-pdf", h.UploadPDF)
 	applicantApi.Use(AuthMiddleware())
-	applicantApi.GET("/profile", h.GetProfile)
 	applicantApi.PATCH("/profile", h.UpdateUserInformation)
+	applicantApi.GET("/profile", h.GetProfile)
+	applicantApi.POST("/upload-pdf", h.UploadPDF)
 
 }
 
@@ -114,19 +113,17 @@ func (h *Handler) Login(c *gin.Context) {
 	h.respondWithData(c, http.StatusOK, "login success", gin.H{"token": token})
 }
 
-// UpdateUserInformation updates user profile information
-// @Summary      Update user profile
-// @Description  Updates the information of a registered user
-// @Tags         Auth
-// @Accept       json
-// @Produce      json
-// @Param        request body userauth.UserInformationRequest true "User Information Request"
-// @Success      200 {object} map[string]string
-// @Failure      400 {object} map[string]interface{}
-// @Failure      401 {object} map[string]string
-// @Failure      500 {object} map[string]string
-// @Security	 BearerAuth
-// @Router       /applicant/external/v1/profile [post]
+// @Summary Update user profile
+// @Description Updates the user profile info
+// @Tags Profile
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body UserInformationRequest true "User Information Request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /applicant/external/v1/profile [patch]
 func (h *Handler) UpdateUserInformation(c *gin.Context) {
 	var req UserInformationRequest
 
@@ -164,16 +161,15 @@ func (h *Handler) UpdateUserInformation(c *gin.Context) {
 	h.respondWithSuccess(c, http.StatusOK, "user info upserted successfully")
 }
 
-// Get the user Profile
-func calculateAge(dob time.Time) int {
-	now := time.Now()
-	years := now.Year() - dob.Year()
-	if now.YearDay() < dob.YearDay() {
-		years--
-	}
-	return years
-}
-
+// @Summary Get user Profile
+// @Description Get the user profile info
+// @Tags Profile
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /applicant/external/v1/profile [get]
 func (h *Handler) GetProfile(c *gin.Context) {
 	userID := c.GetString("user_id")
 
@@ -184,8 +180,6 @@ func (h *Handler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	age := calculateAge(user.DOB)
-
 	h.respondWithData(c, http.StatusOK, "profile fetched successfully", gin.H{
 		"user_id":    user.ID,
 		"email":      user.Email,
@@ -193,7 +187,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 		"first_name": user.FirstName,
 		"last_name":  user.LastName,
 		"gender":     user.Gender,
-		"age":        age,
+		"age":        user.Age,
 		"address":    user.Address,
 		"vehicle":    user.Vehicle,
 	})
@@ -211,6 +205,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 // @Failure      400 {object} map[string]string "bad request or invalid file"
 // @Failure      500 {object} map[string]string "internal server error"
 // @Router       /applicant/external/v1/upload-pdf [post]
+// @Security BearerAuth
 func (h *Handler) UploadPDF(c *gin.Context) {
 	email := c.PostForm("email")
 	file, err := c.FormFile("pdf")
