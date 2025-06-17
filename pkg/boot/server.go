@@ -4,6 +4,8 @@ import (
 	"github.com/abhiii71/clean-code-abhi/pkg/config"
 	userauth "github.com/abhiii71/clean-code-abhi/pkg/user_auth"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type ServerHttp struct {
@@ -12,6 +14,7 @@ type ServerHttp struct {
 
 func NewServerHttp(userHandler userauth.Handler) *ServerHttp {
 	engine := gin.New()
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	userHandler.MountRoutes(engine)
 
 	return &ServerHttp{engine}

@@ -1,0 +1,224 @@
+definitions:
+  userauth.Address:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      postal_code:
+        type: string
+      state:
+        type: string
+    type: object
+  userauth.UserInformationRequest:
+    properties:
+      address:
+        $ref: '#/definitions/userauth.Address'
+      created_at:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+      vehicle:
+        $ref: '#/definitions/userauth.Vehicle'
+    type: object
+  userauth.UserLoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: securePassword123
+        type: string
+    type: object
+  userauth.UserRegisterRequest:
+    properties:
+      dob:
+        example: "2000-01-01"
+        type: string
+      email:
+        example: abhishek@example.com
+        type: string
+      first_name:
+        example: Abhishek
+        type: string
+      gender:
+        example: male/female
+        type: string
+      id:
+        description: optional
+        example: 101
+        type: integer
+      last_name:
+        example: Verma
+        type: string
+      password:
+        example: Password@123
+        type: string
+    type: object
+  userauth.Vehicle:
+    properties:
+      bike:
+        type: boolean
+      car:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: abhishek.work71@gmail.com
+    name: Abhishek
+    url: https://linktr.ee/abhiii71
+  description: This is clean code architecture.
+  title: Clean-Code-Arch
+  version: "1.0"
+paths:
+  /applicant/external/v1/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user with email and password and returns JWT Token
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/userauth.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: login success with token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /applicant/external/v1/profile:
+    post:
+      consumes:
+      - application/json
+      description: Updates the information of a registered user
+      parameters:
+      - description: User Information Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/userauth.UserInformationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Auth
+  /applicant/external/v1/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with required details
+      parameters:
+      - description: UserRegisterRequest
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/userauth.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Auth
+  /applicant/external/v1/upload-pdf:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts email and PDF file to upload and store it.
+      parameters:
+      - description: User email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: PDF file to upload
+        in: formData
+        name: pdf
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: upload successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: bad request or invalid file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload a PDF file for a user
+      tags:
+      - Applicant
+swagger: "2.0"

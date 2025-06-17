@@ -9,15 +9,15 @@ import (
 
 type Date time.Time
 
-// for registration
+// UserRegisterRequest represents the data required for user registration
 type UserRegisterRequest struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	DOB       Date   `json:"dob"`
-	Gender    string `json:"gender"`
+	ID        int    `json:"id" example:"101"` // optional
+	FirstName string `json:"first_name" example:"Abhishek"`
+	LastName  string `json:"last_name" example:"Verma"`
+	Email     string `json:"email" example:"abhishek@example.com"`
+	Password  string `json:"password" example:"Password@123"`
+	DOB       Date   `json:"dob" example:"2000-01-01"`
+	Gender    string `json:"gender" example:"male/female"`
 }
 
 // for user_information
@@ -53,9 +53,10 @@ const (
 )
 
 // for login
+// these examples are not necessary but we follow
 type UserLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"securePassword123"`
 }
 
 // emailregex

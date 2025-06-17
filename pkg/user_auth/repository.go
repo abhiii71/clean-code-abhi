@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -58,16 +59,16 @@ func (r *repository) UserRegister(ctx context.Context, request UserRegisterReque
 // update user information
 func (r *repository) UpdateUserInfo(ctx context.Context, request UserInformationRequest, addressJSON, vehicleJSON []byte) error {
 	query := `
-        INSERT INTO user_information (id, address, vehicle, created_at, updated_at)
+        INSERT INTO user_information (user_id, address, vehicle, created_at, updated_at)
         VALUES ($1, $2, $3, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE
+        ON CONFLICT (user_id) DO UPDATE
         SET 
             address = COALESCE(EXCLUDED.address, user_information.address),
             vehicle = COALESCE(EXCLUDED.vehicle, user_information.vehicle),
             updated_at = NOW()
     `
 
-	_, err := r.db.ExecContext(ctx, query, request, addressJSON, vehicleJSON)
+	_, err := r.db.ExecContext(ctx, query, request.ID, addressJSON, vehicleJSON)
 	if err != nil {
 		log.Println("[UpdateUserInfo] Error executing query:", err)
 		return err
@@ -102,13 +103,20 @@ func (r *repository) FindUserByID(ctx context.Context, userID string) (*User, []
       u.id, u.email, u.password, u.dob, u.first_name, u.last_name, u.gender,
       ui.address, ui.vehicle
     FROM users u
-    LEFT JOIN user_information ui ON u.id = ui.id
+    LEFT JOIN user_information ui ON u.id = ui.user_id
     WHERE u.id = $1;
     `
 
-	row := r.db.QueryRowContext(ctx, query, userID)
+	// Convert userID if needed
+	idInt, err := strconv.Atoi(userID)
+	if err != nil {
+		log.Println("[FindUserByID] Invalid user ID:", err)
+		return nil, nil, nil, err
+	}
 
-	err := row.Scan(
+	row := r.db.QueryRowContext(ctx, query, idInt)
+
+	err = row.Scan(
 		&user.ID,
 		&user.Email,
 		&user.Password,
@@ -120,7 +128,7 @@ func (r *repository) FindUserByID(ctx context.Context, userID string) (*User, []
 		&vehicleBytes,
 	)
 	if err != nil {
-		log.Println("[GetProfile] Error scanning user:", err)
+		log.Println("[FindUserByID] Error scanning user:", err)
 		return nil, nil, nil, err
 	}
 
@@ -137,7 +145,7 @@ SELECT
 FROM 
     users u
 LEFT JOIN 
-    user_information ui ON u.id = ui.id
+    user_information ui ON u.id = ui.user_id
 WHERE 
     u.id = $1
 `

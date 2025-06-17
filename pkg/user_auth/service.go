@@ -36,7 +36,7 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest) (string, error) {
-	// business login
+	// business logic
 	// password hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -46,7 +46,6 @@ func (s *service) UserRegister(ctx context.Context, request UserRegisterRequest)
 
 	_, err = s.repo.FindUserByEmail(ctx, request.Email)
 	if err == nil {
-		// log.Println("[FindByEmail Error]:", err)
 		return "", fmt.Errorf("email already regestered")
 	}
 	request.Password = string(hashedPassword)
