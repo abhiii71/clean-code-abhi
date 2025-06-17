@@ -1,0 +1,7 @@
+CREATE TABLE user_information (
+    user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    address JSONB,
+    vehicle JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
